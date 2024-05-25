@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color1: red;
+  --color2: blue;
+  --whiteSwitch: #fff;
+  --blackSwitch: #000;
+
+  --largeFontSize: 4rem;
+  --mediumFontSize: 2.5rem;
+  --regularFontSize: 1rem;
+}
+
+@media only screen and (max-width: 400px) {
+  :root {
+    --largeFontSize: 2rem;
+    --mediumFontSize: 1.3rem;
+    --regularFontSize: 1rem;
+  }
+}
+
+*,
+*::before,
+*::after {
+  /* border: 1px solid red !important; */
+}
+
+html {
+  min-height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  font-size: var(--regularFontSize);
+}
+
+body {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  font-family: var(--quattrocento);
+}
+
+h1 {
+  font-family: var(--oswald);
+  font-size: var(--largeFontSize);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+h2 {
+  font-family: var(--oswald);
+  font-size: var(--mediumFontSize);
+  font-weight: 300;
+}
+
+h3 {
+  font-weight: bold;
+}
+
+
+
+button {
+  appearance: none;
+  background-color: #FCFCFD;
+  border-radius: 4px;
+  border-width: 0;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+  box-sizing: border-box;
+  color: #36395A;
+  cursor: pointer;
+  justify-content: center;
+  list-style: none;
+  padding: .5rem 1rem;
+  position: relative;
+  text-align: left;
+  text-decoration: none;
+  transition: box-shadow .15s, transform .15s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  will-change: box-shadow, transform;
+  justify-self: flex-start;
+}
+
+button:focus {
+  box-shadow: #D6D6E7 0 0 0 1.5px inset, rgba(45, 35, 66, 0.4) 0 2px 4px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+}
+
+button:hover {
+  box-shadow: rgba(45, 35, 66, 0.4) 0 4px 8px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+  transform: translateY(-2px);
+}
+
+button:active {
+  box-shadow: #D6D6E7 0 3px 7px inset;
+  transform: translateY(2px);
+}
+
+button:disabled {
+  opacity: .2;
+}

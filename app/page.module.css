@@ -1,0 +1,28 @@
+.main {
+    display: grid;
+    align-content: flex-start;
+    position: relative;
+}
+
+
+.topCont {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem;
+}
+
+
+.timerDisplayCont {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+
+.bottomCont {
+    display: grid;
+    gap: .5rem;
+    padding: 1rem;
+}

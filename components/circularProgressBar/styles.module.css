@@ -1,0 +1,70 @@
+.cont {
+    --regularReshapeFontSize: clamp(1px, calc(5vw + 1px), 1rem);
+    --mediumReshapeFontSize: calc(var(--regularReshapeFontSize) * 2);
+
+    font-size: var(--regularReshapeFontSize);
+
+    position: relative;
+    width: min(250px, 95vw);
+    aspect-ratio: 1/1;
+    overflow: hidden;
+}
+
+.circularProgress {
+    --size: min(250px, 95vw);
+    --half-size: calc(var(--size) / 2);
+    --stroke-width: 20%;
+    --radius: calc((var(--size) - var(--stroke-width)) / 2);
+    --circumference: calc(var(--radius) * pi * 2);
+    --dash: calc((var(--progress) * var(--circumference)) / 100);
+}
+
+.circularProgress circle {
+    cx: var(--half-size);
+    cy: var(--half-size);
+    r: var(--radius);
+    stroke-width: var(--stroke-width);
+    fill: none;
+    stroke-linecap: round;
+}
+
+.circularProgress circle.bg {
+    stroke: var(--background);
+}
+
+.circularProgress circle.fg {
+    position: relative;
+    transform: rotate(-90deg);
+    transform-origin: var(--half-size) var(--half-size);
+    stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+    stroke: var(--stroke1);
+    animation: rotate 60s linear infinite;
+    animation-direction: var(--rotateDirection);
+    animation-play-state: var(--playState);
+}
+
+
+.textCont {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    display: grid;
+    justify-items: center;
+    align-items: center;
+}
+
+.textCont h3 {
+    font-size: var(--mediumReshapeFontSize);
+}
+
+
+@keyframes rotate {
+    from {
+        rotate: 0deg;
+    }
+
+    to {
+        rotate: 360deg;
+    }
+}
