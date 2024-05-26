@@ -17,7 +17,6 @@ export default function Home() {
 
   const [timeSpentStudying, timeSpentStudyingSet] = useState<number>()
   const [totalTimeStudying, totalTimeStudyingSet] = useState<number>()
-  const [goalTime, goalTimeSet] = useState(5000)
 
   const [canShowConfetti, canShowConfettiSet] = useState(false)
   const [clickedStoppedStudyingButton, clickedStoppedStudyingButtonSet] = useState(false)
@@ -29,13 +28,13 @@ export default function Home() {
       return
     }
 
-    if (timeSpentStudying > goalTime) {
+    if (timeSpentStudying > 300000) {
       toast.success("met goal!")
 
       canShowConfettiSet(true)
     }
 
-  }, [timeSpentStudying, goalTime])
+  }, [timeSpentStudying])
 
   function handleReset() {
     handleRefresh()
