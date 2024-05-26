@@ -27,6 +27,11 @@
   /* border: 1px solid red !important; */
 }
 
+*::-webkit-scrollbar {
+  display: none;
+}
+
+
 html {
   min-height: 100%;
   width: 100%;
