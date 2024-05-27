@@ -7,166 +7,180 @@ import Confetti from 'react-confetti'
 import { toast } from "react-hot-toast";
 
 export default function Home() {
-  const [mode, modeSet] = useState<"countUp" | "countDown">("countUp")
-
-  const { usingTime, runningTime, timeFinished, isPaused, handlePause, handlePlay, handleStart, handleRefresh } = useTimer()
+  const { usingTime: usingTimeCD, runningTime: runningTimeCD, timeFinished: timeFinishedCD, isPaused: isPausedCD, pause: pauseCD, play: playCD, start: startCD, refreshTimer: refreshTimerCD, time: timeCD } = useTimer("countDown")
+  const { usingTime: usingTimeCU, runningTime: runningTimeCU, timeFinished: timeFinishedCU, isPaused: isPausedCU, pause: pauseCU, play: playCU, start: startCU, refreshTimer: refreshTimerCU, time: timeCU } = useTimer("countUp")
   const [width, height] = useWindowSize()
 
-  const [timeStartedStudying, timeStartedStudyingSet] = useState<Date>()
-  const [timeStoppedStudying, timeStoppedStudyingSet] = useState<Date>()
-
-  const [timeSpentStudying, timeSpentStudyingSet] = useState<number>()
-  const [totalTimeStudying, totalTimeStudyingSet] = useState<number>()
-
   const [canShowConfetti, canShowConfettiSet] = useState(false)
-  const [clickedStoppedStudyingButton, clickedStoppedStudyingButtonSet] = useState(false)
 
-  //show confetti
-  useEffect(() => {
-    if (timeSpentStudying === undefined) {
-      canShowConfettiSet(false)
-      return
+  const [mode, modeSet] = useState<"studying" | "notStudying" | "break">("notStudying")
+
+  const [totalTimeStudying, totalTimeStudyingSet] = useState<number>(0)
+
+  const [timeWhenBreakStarted, timeWhenBreakStartedSet] = useState<number>()
+  const [totalBreakTime, totalBreakTimeSet] = useState<number>(0)
+
+  const egTimeSetter = useRef(() => {
+    const seconds = 1000 * 30
+    const minutes = 1000 * 60 * 0
+    const hours = 1000 * 60 * 60 * 0
+
+    return hours + minutes + seconds
+  })
+
+  function displayFormattedTime(timeLeft: number) {
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+    const milliseconds = timeLeft % 1000;
+
+    const strArr: string[] = []
+
+    if (hours > 0) {
+      strArr.push(`${hours}h`)
     }
 
-    if (timeSpentStudying > 300000) {
-      toast.success("met goal!")
-
-      canShowConfettiSet(true)
+    if (minutes > 0) {
+      strArr.push(`${minutes}m`)
     }
 
-  }, [timeSpentStudying])
+    if (seconds > 0) {
+      strArr.push(`${seconds}s`)
+    }
 
-  function handleReset() {
-    handleRefresh()
-    timeStartedStudyingSet(undefined)
-    timeStoppedStudyingSet(undefined)
-    modeSet("countUp")
+    if (milliseconds > 0) {
+      strArr.push(`${milliseconds}ms`)
+    }
+
+    return strArr.join(" ")
   }
 
-  function handleStartStudying() {
-    //set time started studying
-    timeStartedStudyingSet(new Date())
+  function checkIfCanShowConfetti() {
+    if (timeCU === undefined || timeCU < 300000) return
 
-    //refresh clock
-    handleRefresh()
+    toast.success("met goal!")
 
-    //set mode
-    const modeLocal = "countUp"
-    modeSet(modeLocal)
-
-    //start
-    handleStart(Date.now() - (totalTimeStudying ?? 0), modeLocal)
+    canShowConfettiSet(true)
   }
 
   return (
     <main className={styles.main}>
-      <h1>5 min study</h1>
-
       <div className={styles.topCont}>
-        {mode === "countUp" && (
+        {mode !== "break" && (
           <>
-            <button disabled={timeStartedStudying !== undefined} onClick={handleStartStudying}>Start Studying</button>
+            <button disabled={mode === "studying"}
+              onClick={() => {
+                modeSet("studying")
 
-            {timeStartedStudying !== undefined && (
-              <button disabled={timeStartedStudying !== undefined && timeStoppedStudying !== undefined} onClick={() => {
-                //capture when stopped studying
-                const timeStoppedStudyingLocal = new Date
+                const currentTime = Date.now()
 
-                //pause the timer
-                handlePause(mode)
+                startCU(currentTime)
+              }}
+            >Start Studying</button>
 
-                //record that time
-                timeStoppedStudyingSet(timeStoppedStudyingLocal)
+            <button disabled={mode === "notStudying"}
+              onClick={() => {
+                if (timeCU === undefined) return
+                modeSet("notStudying")
 
-                //get how long has been studying for session
-                let differenceInMillis = timeStoppedStudyingLocal.getTime() - timeStartedStudying.getTime()
+                pauseCU()
 
-                //set that time
-                timeSpentStudyingSet(differenceInMillis)
+                checkIfCanShowConfetti()
 
                 //increse total time
                 totalTimeStudyingSet(prev => {
-                  let newTimeSpentStudying = prev ?? 0
-                  newTimeSpentStudying += differenceInMillis
+                  const newTimeSpentStudying = prev + timeCU
 
                   return newTimeSpentStudying
                 })
-
-                //note button click
-                clickedStoppedStudyingButtonSet(true)
-              }}>Stop Studying</button>
-            )}
-
-            {timeStartedStudying !== undefined && timeStoppedStudying !== undefined && (
-              <button onClick={() => {
-                if (timeSpentStudying === undefined) return
-                //refresh clock
-                handleRefresh()
-
-                //set mode
-                const modeLocal = "countDown"
-
-                //start
-                handleStart(timeSpentStudying, modeLocal)
-                modeSet(modeLocal)
-
-                //rest button click
-                clickedStoppedStudyingButtonSet(false)
-
-              }}>Start Break</button>
-            )}
+              }}
+            >Stop Studying</button>
           </>
         )}
 
-        {!clickedStoppedStudyingButton && runningTime !== undefined && (
-          <>
-            {!isPaused && (
-              <button disabled={timeFinished} onClick={() => handlePause(mode)}>Pause</button>
-            )}
+        {mode !== "studying" && totalTimeStudying - totalBreakTime > 0 && (
+          <button disabled={mode === "break"}
+            onClick={() => {
+              if (totalTimeStudying === undefined) return
+              modeSet("break")
 
-            {isPaused && (
-              <button disabled={timeFinished} onClick={() => { handlePlay(mode) }}>Play</button>
-            )}
+              const breakTimeDuration = totalTimeStudying - totalBreakTime
+
+              //start
+              startCD(breakTimeDuration)
+
+              timeWhenBreakStartedSet(breakTimeDuration)
+            }}
+          >Go On Break</button>
+        )}
+
+        {mode === "break" && (
+          <>
+            <button onClick={() => {
+              if (timeWhenBreakStarted === undefined || timeCD === undefined) return
+              pauseCD()
+
+              modeSet("notStudying")
+
+              const breakSessionDuration = timeWhenBreakStarted - timeCD
+
+              totalBreakTimeSet(prev => {
+                const newBreakTime = prev + breakSessionDuration
+
+                return newBreakTime
+              })
+            }}>end break</button>
           </>
         )}
       </div>
 
-      {usingTime !== undefined && runningTime !== undefined && (
-        <>
+      <div className={styles.timerDisplayCont}>
+        {mode === "break" && usingTimeCD !== undefined && runningTimeCD !== undefined && (
           <div className={styles.timerDisplayCont}>
-            {usingTime.hours && (
-              <CircularProgressBar label={runningTime.hours > 1 ? "hours" : "hour"} timeLeft={runningTime.hours} progress={mode === "countDown" ? 100 - (Math.floor((runningTime.hours / 24) * 100)) : (Math.floor((runningTime.hours / 24) * 100))} rotateDirection="reverse" timerFinished={timeFinished} />
+            {usingTimeCD.hours && (
+              <CircularProgressBar label={runningTimeCD.hours !== 1 ? "hours" : "hour"} timeLeft={runningTimeCD.hours} progress={100 - (Math.floor((runningTimeCD.hours / 24) * 100))} rotateDirection="reverse" timerFinished={timeFinishedCD} />
             )}
 
-            {usingTime.minutes && (
-              <CircularProgressBar label={runningTime.minutes > 1 ? "minutes" : "minute"} timeLeft={runningTime.minutes} progress={mode === "countDown" ? 100 - (Math.floor((runningTime.minutes / 60) * 100)) : (Math.floor((runningTime.minutes / 60) * 100))} timerFinished={timeFinished} />
+            {usingTimeCD.minutes && (
+              <CircularProgressBar label={runningTimeCD.minutes !== 1 ? "minutes" : "minute"} timeLeft={runningTimeCD.minutes} progress={100 - (Math.floor((runningTimeCD.minutes / 60) * 100))} timerFinished={timeFinishedCD} />
             )}
 
-            {usingTime.seconds && (
-              <CircularProgressBar label={runningTime.seconds > 1 ? "seconds" : "second"} timeLeft={runningTime.seconds} progress={mode === "countDown" ? 100 - (Math.floor((runningTime.seconds / 60) * 100)) : (Math.floor((runningTime.seconds / 60) * 100))} rotateDirection="reverse" timerFinished={timeFinished} />
+            {usingTimeCD.seconds && (
+              <CircularProgressBar label={runningTimeCD.seconds !== 1 ? "seconds" : "second"} timeLeft={runningTimeCD.seconds} progress={100 - (Math.floor((runningTimeCD.seconds / 60) * 100))} timerFinished={timeFinishedCD} />
             )}
 
-            {usingTime.milliseconds && (
-              <CircularProgressBar label={runningTime.milliseconds > 1 ? "milliseconds" : "millisecond"} timeLeft={runningTime.milliseconds} progress={mode === "countDown" ? 100 - (Math.floor((runningTime.milliseconds / 1000) * 100)) : (Math.floor((runningTime.milliseconds / 1000) * 100))} transitionTime={0} timerFinished={timeFinished} />
+            {usingTimeCD.milliseconds && (
+              <CircularProgressBar label={runningTimeCD.milliseconds !== 1 ? "milliseconds" : "millisecond"} timeLeft={runningTimeCD.milliseconds} progress={100 - (Math.floor((runningTimeCD.milliseconds / 1000) * 100))} timerFinished={timeFinishedCD} transitionTime={0} />
             )}
           </div>
-        </>
-      )}
+        )}
 
-      {timeFinished && (
+        {mode !== "break" && usingTimeCU !== undefined && runningTimeCU !== undefined && (
+          <div className={styles.timerDisplayCont}>
+            {usingTimeCU.hours && (
+              <CircularProgressBar label={runningTimeCU.hours !== 1 ? "hours" : "hour"} timeLeft={runningTimeCU.hours} progress={Math.floor((runningTimeCU.hours / 24) * 100)} rotateDirection="reverse" timerFinished={timeFinishedCU} />
+            )}
+
+            {usingTimeCU.minutes && (
+              <CircularProgressBar label={runningTimeCU.minutes !== 1 ? "minutes" : "minute"} timeLeft={runningTimeCU.minutes} progress={Math.floor((runningTimeCU.minutes / 60) * 100)} timerFinished={timeFinishedCU} />
+            )}
+
+            {usingTimeCU.seconds && (
+              <CircularProgressBar label={runningTimeCU.seconds !== 1 ? "seconds" : "second"} timeLeft={runningTimeCU.seconds} progress={Math.floor((runningTimeCU.seconds / 60) * 100)} timerFinished={timeFinishedCU} />
+            )}
+
+            {usingTimeCU.milliseconds && (
+              <CircularProgressBar label={runningTimeCU.milliseconds !== 1 ? "milliseconds" : "millisecond"} timeLeft={runningTimeCU.milliseconds} progress={Math.floor((runningTimeCU.milliseconds / 1000) * 100)} timerFinished={timeFinishedCU} transitionTime={0} />
+            )}
+          </div>
+        )}
+      </div>
+
+      <h2 style={{ justifySelf: "center", opacity: (mode === "notStudying" && totalTimeStudying > 0) ? "" : 0, textAlign: "center" }}>Total Studying Time <br />{displayFormattedTime(totalTimeStudying)}</h2>
+
+      {timeFinishedCD && mode === "break" && (
         <div className={styles.bottomCont}>
           <h2>Timer Finished</h2>
-
-          <button onClick={() => {
-            //reset top buttons
-            timeStartedStudyingSet(undefined)
-            timeStoppedStudyingSet(undefined)
-
-            //start studying
-            handleStartStudying()
-          }}>Continue Studying</button>
-
-          <button onClick={handleReset}>refresh</button>
         </div>
       )}
 
@@ -184,14 +198,10 @@ export default function Home() {
         />
       )}
     </main>
-  );
+  )
 }
 
-
-
-
-
-function useTimer() {
+function useTimer(mode: "countUp" | "countDown") {
   const [time, timeSet] = useState<number>();
   const [usingTime, usingTimeSet] = useState<{
     hours: boolean,
@@ -199,33 +209,29 @@ function useTimer() {
     seconds: boolean,
     milliseconds: boolean
   }>();
-
-  const [endTime, endTimeSet] = useState<number>();
-  const [timeRemainingOnPause, timeRemainingOnPauseSet] = useState<number>();
-  const [isPaused, isPausedSet] = useState(false)
+  const [isPaused, isPausedSet] = useState(false);
 
   const countDownTimerInterval = useRef<NodeJS.Timeout>()
   const countUpTimerInterval = useRef<NodeJS.Timeout>()
 
   //start timer
-  function handleStart(durationInMillis: number, mode: "countUp" | "countDown") {
+  function start(durationInMillis: number) {
     if (mode === "countDown") {
       //get the start time
-      const startTimeLocal = Date.now();
+      const startTime = Date.now();
 
-      //get the end time
-      const endTimeLocal = startTimeLocal + durationInMillis;
-      endTimeSet(endTimeLocal)
+      //choose a time in the future for the end time - then count down to that
+      const endTime = startTime + durationInMillis;
 
-      //get remainding time first calculation 
-      let timeRemaining = endTimeLocal - startTimeLocal;
+      //get remainding time initial calculation 
+      let timeRemaining = endTime - startTime;
       const { hours, minutes, seconds, milliseconds } = calculateTime(timeRemaining)
 
       //set whether using minutes/secods/hours or not
       usingTimeSet({ hours: hours > 0 ? true : false, minutes: minutes > 0 ? true : false, seconds: seconds > 0 ? true : false, milliseconds: milliseconds > 0 ? true : false })
 
       //start time loop
-      countDownTimerInterval.current = setInterval(() => { decreaseTimer(endTimeLocal) }, 1);
+      countDownTimerInterval.current = setInterval(() => { decreaseTimer(endTime) }, 1);
 
 
     } else {
@@ -262,11 +268,10 @@ function useTimer() {
   };
 
   function increaseTimer(startTime: number) {
-    //get current time
-    const currentTime = Date.now();
-
-    //calculate time remaining
+    //calculate time between now and the time in the passed
+    const currentTime = Date.now()
     let timeElapsed = currentTime - startTime;
+
 
     //check new values we can use 
     const { hours, minutes, seconds, milliseconds } = calculateTime(timeElapsed)
@@ -298,30 +303,16 @@ function useTimer() {
     timeSet(timeElapsed);
   };
 
-  function handlePause(mode: "countUp" | "countDown") {
+  function pause() {
     if (mode === "countDown") {
-      if (endTime === undefined) return
-
-      isPausedSet(true)
-
       //clear interval
       if (countDownTimerInterval.current) { clearInterval(countDownTimerInterval.current) }
 
-      const currentTime = Date.now();
-      let timeRemaining = endTime - currentTime;
-
-      //save remaining time
-      timeRemainingOnPauseSet(timeRemaining)
-
-
-
-
-
+      isPausedSet(true)
 
 
     } else {
       //count Up
-
       isPausedSet(true)
 
       //clear interval
@@ -329,33 +320,27 @@ function useTimer() {
     }
   }
 
-  function handlePlay(mode: "countUp" | "countDown") {
+  function play() {
     if (mode === "countDown") {
-      if (timeRemainingOnPause === undefined) return
+      if (time === undefined) return
+
       isPausedSet(false)
 
-      handleStart(timeRemainingOnPause, mode)
-
-
-
-
-
-
+      start(time)
 
     } else {
       //count up 
       if (time === undefined) return
 
       isPausedSet(false)
-      handleStart(Date.now() - time, mode)
+
+      start(Date.now() - time)
     }
   }
 
-  function handleRefresh() {
+  function refreshTimer() {
     timeSet(undefined)
     usingTimeSet(undefined)
-    endTimeSet(undefined)
-    timeRemainingOnPauseSet(undefined)
     isPausedSet(false)
     if (countDownTimerInterval.current) clearInterval(countDownTimerInterval.current)
     countDownTimerInterval.current = undefined
@@ -365,11 +350,12 @@ function useTimer() {
     usingTime,
     runningTime: time !== undefined ? calculateTime(time) : undefined,
     timeFinished: time === 0,
+    time: time,
     isPaused,
-    handlePause,
-    handlePlay,
-    handleStart,
-    handleRefresh
+    pause,
+    play,
+    start,
+    refreshTimer
   }
 };
 
